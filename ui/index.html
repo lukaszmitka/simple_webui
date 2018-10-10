@@ -11,21 +11,25 @@
 </head>
 
 <body class="bg-light my-auto">
-    <div class="section">
-        <div class="joystick-container">
-            <div id="joystick"></div>
-        </div>
+    <div class="joystick-container">
+        <div id="joystick"></div>
     </div>
-    <!-- INFO -->
-    <div class="section">
-        <div class="row w-100">
-            <div class="col-md-2"></div>
-            <div class="col-md-8">
-                <div class="alert alert-success">
-                    <h4 class="alert-heading">Use joystick to control robot.</h4>
+
+    <div class="container h-100">
+        <div class="h-100 d-flex flex-column justify-content-between p-2">
+            <div id="top">
+                <div class="alert alert-success my-1">
+                    <p class=" alert-heading text-center my-0" id="battery">Battery: 0.0 V</p>
+                </div>
+                <div class="alert alert-warning my-1" id="conn-warn-container" style="display: none;">
+                    <p class="alert-heading text-center my-0" id="conn-warn">Warning placeholder</p>
                 </div>
             </div>
-            <div class="col-md-2"></div>
+            <div id="bottom">
+                <div class="alert alert-success my-1">
+                    <h4 class=" alert-heading text-center">Use joystick to control your robot.</h4>
+                </div>
+            </div>
         </div>
     </div>
 

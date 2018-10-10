@@ -1,20 +1,9 @@
 body {
   font-family:Lato;
+  height: 100vh;
 }
 
-#joystick {
-  position: relative;
-  background-image:url("../../assets/img/arrows.png");
-  background-size:600px 600px;
-  background-repeat:no-repeat;
-  width:600px;
-  height:600px;
-  background-position:center;
-  margin: auto;
-  margin-top: 6%;
-  margin-bottom: 6%;  
-}
 
 .joystick-container {
-  position: relative;
+  position: absolute;
 }

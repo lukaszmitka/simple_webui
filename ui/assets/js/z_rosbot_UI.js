@@ -5,15 +5,19 @@ var lin;
 var ang;
 var joystick_timeout;
 var velocity_repeat_delay = 100; // [ms]
+var max_joy_pos = 0;
 
 var twist;
 var ros;
 var cmdVel;
 var pose_subscriber;
+var battery_subscriber;
 
 var timerInstance;
 var watchdogTimerInstance;
 var teleop;
+var connectionWarningElement;
+var resize_tout;
 
 var lastMsgDate = new Date();
 var lastMsgMs = lastMsgDate.getTime();
@@ -67,7 +71,19 @@ window.onload = function () {
 		messageType: 'geometry_msgs/PoseStamped'
 	});
 
+	battery_subscriber = new ROSLIB.Topic({
+		ros: ros,
+		name: '/battery',
+		messageType: 'sensor_msgs/BatteryState'
+	});
+
 	pose_subscriber.subscribe(function (pose) {
+		lastMsgDate = new Date();
+		lastMsgMs = lastMsgDate.getTime();
+	});
+
+	battery_subscriber.subscribe(function (battery) {
+		setBatteryVoltage(battery.voltage);
 		lastMsgDate = new Date();
 		lastMsgMs = lastMsgDate.getTime();
 	});
@@ -79,21 +95,31 @@ window.onload = function () {
 	watchdogTimerInstance.start();
 };
 
+$(window).resize(function () {
+	setView();
+});
+
+function setBatteryVoltage(voltage) {
+	batteryIndicator = document.getElementById('battery');
+	battStatus = "Battery: ";
+	battUnit = " V";
+	batteryIndicator.innerHTML = battStatus.concat(parseFloat(voltage).toFixed(2)).concat(battUnit);
+}
+
 function watchdogTimer(e) {
 	currentMsgDate = new Date();
 	currentMsgMs = currentMsgDate.getTime();
 	if (currentMsgMs - lastMsgMs > 1000) {
 		noMessage = "No messege received since ";
-		checkConn = " seconds.\n\rCheck your internet connection and reload this page!"
-		$.notify(noMessage.concat(parseInt((currentMsgMs - lastMsgMs) / 1000)).concat(checkConn),
-			{
-				autoHideDelay: 990,
-				position: "top left",
-				className: 'warn',
-				showDuration: 0,
-				hideDuration: 0,
-				gap: 2
-			});
+		checkConn = " seconds. Check your internet connection and reload this page!"
+
+		connectionWarningElement = document.getElementById('conn-warn-container');
+		connectionWarningElement.style.display = "inherit";
+		connectionWarningElement = document.getElementById('conn-warn');
+		connectionWarningElement.innerHTML = noMessage.concat(parseInt((currentMsgMs - lastMsgMs) / 1000)).concat(checkConn);
+	} else {
+		connectionWarningElement = document.getElementById('conn-warn-container');
+		connectionWarningElement.style.display = "none";
 	}
 }
 
@@ -108,18 +134,20 @@ function removeJoystick() {
 }
 
 function setView() {
-	console.log("SetView triggered");
 	removeJoystick();
-	joySize = 600;
-	joyPosY = ($(window).height() - joySize) / 2;
-	joyPosX = ($(window).width() - joySize) / 2;
-	console.log("Create joystick: x=", joyPosX, ", y=", joyPosY);
-	createJoystick(300, 300, joySize * 2 / 3);
+	joySize = 400;
+	if (joySize > $(window).height()) {
+		joySize = $(window).height();
+	}
+	if (joySize > $(window).width()) {
+		joySize = $(window).width();
+	}
+	max_joy_pos = joySize / 3;
+	createJoystick($(window).width() / 2, $(window).height() / 2, joySize * 2 / 3);
 	initTeleopKeyboard();
 }
 
 function repeat_velcmd(v_lin, v_ang) {
-	console.log("Command repeated");
 	moveAction(v_lin, v_ang)
 	joystick_timeout = setTimeout(function () { repeat_velcmd(lin, ang); }, velocity_repeat_delay);
 }
@@ -141,8 +169,10 @@ function createJoystick(x, y, d) {
 		if (direction > 180) {
 			direction = -(450 - nipple.angle.degree);
 		}
-		lin = Math.cos(direction / 57.29) * nipple.distance * 0.005;
-		ang = Math.sin(direction / 57.29) * nipple.distance * 0.05;
+		// 2,39 m/s max speed
+		// 4,33 rad/s max rotation speed
+		lin = Math.cos(direction / 57.29) * 2.39 * nipple.distance / max_joy_pos;
+		ang = Math.sin(direction / 57.29) * 4.33 * nipple.distance / max_joy_pos;
 		clearTimeout(joystick_timeout);
 		moveAction(lin, ang);
 		joystick_timeout = setTimeout(function () { repeat_velcmd(lin, ang); }, velocity_repeat_delay);
