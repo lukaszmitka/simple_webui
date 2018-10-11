@@ -7,3 +7,8 @@ body {
 .joystick-container {
   position: absolute;
 }
+
+.wifi-status {
+  width: 20px;
+  height: 20px;
+}

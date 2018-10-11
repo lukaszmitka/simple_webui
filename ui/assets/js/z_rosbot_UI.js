@@ -12,6 +12,7 @@ var ros;
 var cmdVel;
 var pose_subscriber;
 var battery_subscriber;
+var wifiSubscriber;
 
 var timerInstance;
 var watchdogTimerInstance;
@@ -77,6 +78,12 @@ window.onload = function () {
 		messageType: 'sensor_msgs/BatteryState'
 	});
 
+	wifiSubscriber = new ROSLIB.Topic({
+		ros: ros,
+		name: '/wifi_status',
+		messageType: 'diagnostic_msgs/DiagnosticArray'
+	});
+
 	pose_subscriber.subscribe(function (pose) {
 		lastMsgDate = new Date();
 		lastMsgMs = lastMsgDate.getTime();
@@ -86,6 +93,10 @@ window.onload = function () {
 		setBatteryVoltage(battery.voltage);
 		lastMsgDate = new Date();
 		lastMsgMs = lastMsgDate.getTime();
+	});
+
+	wifiSubscriber.subscribe(function (statuses) {
+		updateWifiStatuses(statuses);
 	});
 
 	setView();
@@ -98,6 +109,31 @@ window.onload = function () {
 $(window).resize(function () {
 	setView();
 });
+
+function updateWifiStatuses(wifiStatuses) {
+	// console.log("Statuses ", wifiStatuses);
+	var wifiStatusP1 = '<div class="text-center mx-1">';
+	var wifiStatusP2 = '<img src="assets/img/wifi-';
+	var wifiStatusP3 = '.png" class="wifi-status mx-1" alt="wifi-status"></div>';
+	var wifiStatusStr;
+	var wifiStatusAggregated = "";
+	for (i = 0; i < wifiStatuses.status.length; i++) {
+		var wifiPercent;
+		for (j = 0; j < wifiStatuses.status[i].values.length; j++) {
+			if (wifiStatuses.status[i].values[j].key = "percentage") {
+				wifiPercent = wifiStatuses.status[i].values[j].value;
+			}
+		}
+		wifiStatusStr = wifiStatusP1 + wifiStatuses.status[i].name + wifiStatusP2 + Math.ceil(wifiPercent / 25) + wifiStatusP3;
+		// console.log("Received WiFi status: ", wifiStatuses.status[i].name, ", strength: ", Math.ceil(wifiPercent / 25), "/4");
+		wifiStatusAggregated += wifiStatusStr;
+	}
+	console.log(wifiStatusAggregated);
+	wifiStatusElem = document.getElementById('wifi-status');
+	wifiStatusElem.style.display = "inherit";
+	wifiStatusContainer = document.getElementById('wifi-status-container');
+	wifiStatusContainer.innerHTML = wifiStatusAggregated;
+}
 
 function setBatteryVoltage(voltage) {
 	batteryIndicator = document.getElementById('battery');
