@@ -1,6 +1,6 @@
-# PID webui
+# simple webui
 
-This repository contains web interface, which enable you to use web browser to adjust PID parameters. Absolutely prototype version, use on your own risk.
+This repository contains web interface, which enable you to use web browser to control ROS based robot. Absolutely prototype version, use on your own risk.
 
 Interface is based on [RobotWebTools project](https://github.com/RobotWebTools).
 
