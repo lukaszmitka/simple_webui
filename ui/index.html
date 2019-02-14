@@ -33,6 +33,21 @@
                 <div class="alert alert-success my-1">
                     <h4 class=" alert-heading text-center">Use joystick to control your robot.</h4>
                 </div>
+                <h5 class="alert alert-info d-flex justify-content-center mb-1 mt-3">Use below controls to tune PID
+                </h5>
+                <div class="col d-flex justify-content-center">
+                    <div class="alert alert-warning mx-1 my-0">P:</div>
+                    <input class="alert-info my-0 mx-1 justify-content-center form-control" placeholder=".col-2"
+                        type="number" name="kp_value" id="kp_value" value="10" step="0.1" min="0" max="1000">
+                    <div class="alert alert-warning mx-1 my-0">I:</div>
+                    <input class="alert-info my-0 mx-1 justify-content-center form-control" placeholder=".col-2"
+                        type="number" name="ki_value" id="ki_value" value="1" step="0.1" min="0" max="1000">
+                    <div class="alert alert-warning mx-1 my-0">D:</div>
+                    <input class="alert-info my-0 mx-1 justify-content-center form-control" placeholder=".col-2"
+                        type="number" name="kd_value" id="kd_value" value="0.1" step="0.1" min="0" max="1000">
+                    <button class="btn btn-primary btn-danger text-light" type="button" id="set-pid-button">Set
+                        PID</button>
+                </div>
             </div>
         </div>
     </div>

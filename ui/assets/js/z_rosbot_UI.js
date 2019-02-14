@@ -10,6 +10,9 @@ var max_joy_pos = 0;
 var twist;
 var ros;
 var cmdVel;
+var setPid;
+// var keyValuePair;
+var pidParams;
 var pose_subscriber;
 var battery_subscriber;
 var wifiSubscriber;
@@ -24,6 +27,10 @@ var lastMsgDate = new Date();
 var lastMsgMs = lastMsgDate.getTime();
 var currentMsgDate = new Date();
 var currentMsgMs = currentMsgDate.getTime();
+
+var PID_kp = 1;
+var PID_ki = 0.1;
+var PID_kd = 0.01;
 
 window.onload = function () {
 	console.log("onLoad triggered");
@@ -52,6 +59,34 @@ window.onload = function () {
 	});
 
 	cmdVel.advertise();
+
+	pidParams = new ROSLIB.Message({
+		level: 0,
+		name: 'pid_params',
+		message: 'pid_params',
+		hardware_id: 'pid_params',
+		values: [
+			{ key: 'P', value: PID_kp },								// float  Proportional part constant
+			{ key: 'I', value: PID_ki },								// float  Integral part constant
+			{ key: 'D', value: PID_kd }								// float  Derivative part constant
+			// { key: 'scale', value: 'value' },							// float  tuning scale
+			// { key: 'del_kp', value: 'value' },							// float  balance factor
+			// { key: 'anti_windup', value: 'value' },						// float 
+			// { key: 'int_rate_limit_high', value: 'value' },				// float 
+			// { key: 'int_rate_limit_low', value: 'value' },				// float 
+			// { key: 'pidout_limit_high', value: 'value' },				// float 
+			// { key: 'pidout_limit_low', value: 'value' },				// float 
+			// { key: 'error_tolerance', value: 'value' }					// float 	
+		]
+	})
+
+	setPid = new ROSLIB.Topic({
+		ros: ros,
+		name: '/set_pid',
+		messageType: 'diagnostic_msgs/DiagnosticStatus'
+	});
+
+	setPid.advertise();
 
 	ros.on('connection', function () {
 		console.log('Connected to websocket server.');
@@ -104,7 +139,32 @@ window.onload = function () {
 	watchdogTimerInstance = new Timer();
 	watchdogTimerInstance.addEventListener('secondTenthsUpdated', watchdogTimer);
 	watchdogTimerInstance.start();
+
+	$(document).on("click", "#set-pid-button", function () {
+		console.log("Publish PID");
+		publishPidParameters();
+	});
 };
+
+function publishPidParameters() {
+
+	if (document.getElementById("kp_value") !== undefined) {
+		PID_kp = document.getElementById("kp_value").value;
+	}
+	if (document.getElementById("ki_value") !== undefined) {
+		PID_ki = document.getElementById("ki_value").value;
+	}
+	if (document.getElementById("kd_value") !== undefined) {
+		PID_kd = document.getElementById("kd_value").value;
+	}
+
+	pidParams.values = [
+		{ key: 'P', value: PID_kp },								// float  Proportional part constant
+		{ key: 'I', value: PID_ki },								// float  Integral part constant
+		{ key: 'D', value: PID_kd }								// float  Derivative part constant
+	]
+	setPid.publish(pidParams);
+}
 
 $(window).resize(function () {
 	setView();
