@@ -13,6 +13,7 @@ var cmdVel;
 var setPid;
 // var keyValuePair;
 var pidParams;
+var stepTrigger;
 var pose_subscriber;
 var battery_subscriber;
 var wifiSubscriber;
@@ -31,6 +32,7 @@ var currentMsgMs = currentMsgDate.getTime();
 var PID_kp = 1;
 var PID_ki = 0.1;
 var PID_kd = 0.01;
+var PID_int_limit = 0.1;
 
 window.onload = function () {
 	console.log("onLoad triggered");
@@ -52,42 +54,6 @@ window.onload = function () {
 		url: "ws://" + location.hostname + ":9090"
 	});
 
-	cmdVel = new ROSLIB.Topic({
-		ros: ros,
-		name: '/cmd_vel',
-		messageType: 'geometry_msgs/Twist'
-	});
-
-	cmdVel.advertise();
-
-	pidParams = new ROSLIB.Message({
-		level: 0,
-		name: 'pid_params',
-		message: 'pid_params',
-		hardware_id: 'pid_params',
-		values: [
-			{ key: 'P', value: PID_kp },								// float  Proportional part constant
-			{ key: 'I', value: PID_ki },								// float  Integral part constant
-			{ key: 'D', value: PID_kd }								// float  Derivative part constant
-			// { key: 'scale', value: 'value' },							// float  tuning scale
-			// { key: 'del_kp', value: 'value' },							// float  balance factor
-			// { key: 'anti_windup', value: 'value' },						// float 
-			// { key: 'int_rate_limit_high', value: 'value' },				// float 
-			// { key: 'int_rate_limit_low', value: 'value' },				// float 
-			// { key: 'pidout_limit_high', value: 'value' },				// float 
-			// { key: 'pidout_limit_low', value: 'value' },				// float 
-			// { key: 'error_tolerance', value: 'value' }					// float 	
-		]
-	})
-
-	setPid = new ROSLIB.Topic({
-		ros: ros,
-		name: '/set_pid',
-		messageType: 'diagnostic_msgs/DiagnosticStatus'
-	});
-
-	setPid.advertise();
-
 	ros.on('connection', function () {
 		console.log('Connected to websocket server.');
 	});
@@ -101,21 +67,70 @@ window.onload = function () {
 		console.log('Connection to websocket server closed.');
 	});
 
+	cmdVel = new ROSLIB.Topic({
+		ros: ros,
+		name: 'cmd_vel',
+		messageType: 'geometry_msgs/Twist'
+	});
+
+	cmdVel.advertise();
+
+	pidParams = new ROSLIB.Message({
+		level: 0,
+		name: 'pid_params',
+		message: 'pid_params',
+		hardware_id: 'pid_params',
+		values: [
+			{ key: 'P', value: PID_kp },								// float  Proportional part constant
+			{ key: 'I', value: PID_ki },								// float  Integral part constant
+			{ key: 'D', value: PID_kd },								// float  Derivative part constant
+			{ key: 'I_lim', value: PID_int_limit }
+			// { key: 'scale', value: 'value' },							// float  tuning scale
+			// { key: 'del_kp', value: 'value' },							// float  balance factor
+			// { key: 'anti_windup', value: 'value' },						// float 
+			// { key: 'int_rate_limit_high', value: 'value' },				// float 
+			// { key: 'int_rate_limit_low', value: 'value' },				// float 
+			// { key: 'pidout_limit_high', value: 'value' },				// float 
+			// { key: 'pidout_limit_low', value: 'value' },				// float 
+			// { key: 'error_tolerance', value: 'value' }					// float 	
+		]
+	})
+
+	stepTrigger = new ROSLIB.Message({
+		data: false
+	})
+
+	setPid = new ROSLIB.Topic({
+		ros: ros,
+		name: 'set_pid',
+		messageType: 'diagnostic_msgs/DiagnosticStatus'
+	});
+
+	setPid.advertise();
+
+	testStep = new ROSLIB.Topic({
+		ros: ros,
+		name: 'step',
+		messageType: 'std_msgs/Bool'
+	});
+
+	testStep.advertise();
+
 	pose_subscriber = new ROSLIB.Topic({
 		ros: ros,
-		name: '/pose',
+		name: 'pose',
 		messageType: 'geometry_msgs/PoseStamped'
 	});
 
 	battery_subscriber = new ROSLIB.Topic({
 		ros: ros,
-		name: '/battery',
+		name: 'battery',
 		messageType: 'sensor_msgs/BatteryState'
 	});
 
 	wifiSubscriber = new ROSLIB.Topic({
 		ros: ros,
-		name: '/wifi_status',
+		name: 'wifi_status',
 		messageType: 'diagnostic_msgs/DiagnosticArray'
 	});
 
@@ -144,7 +159,16 @@ window.onload = function () {
 		console.log("Publish PID");
 		publishPidParameters();
 	});
+
+	$(document).on("click", "#step-button", function () {
+		console.log("Publish step");
+		publishStep();
+	});
 };
+
+function publishStep() {
+	testStep.publish(stepTrigger);
+}
 
 function publishPidParameters() {
 
@@ -157,11 +181,15 @@ function publishPidParameters() {
 	if (document.getElementById("kd_value") !== undefined) {
 		PID_kd = document.getElementById("kd_value").value;
 	}
+	if (document.getElementById("int_rate_limit") !== undefined) {
+		PID_int_limit = document.getElementById("int_rate_limit").value;
+	}
 
 	pidParams.values = [
 		{ key: 'P', value: PID_kp },								// float  Proportional part constant
 		{ key: 'I', value: PID_ki },								// float  Integral part constant
-		{ key: 'D', value: PID_kd }								// float  Derivative part constant
+		{ key: 'D', value: PID_kd },								// float  Derivative part constant
+		{ key: 'I_lim', value: PID_int_limit }
 	]
 	setPid.publish(pidParams);
 }
